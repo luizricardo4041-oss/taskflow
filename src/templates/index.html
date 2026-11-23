@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow | Gestão inteligente de tarefas</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-mark">T</span>
+        TaskFlow
+    </a>
+    <span class="tagline">Organize. Priorize. Entregue.</span>
+</header>
+
+<main class="container">
+
+    <section class="hero">
+        <div>
+            <p class="eyebrow">PAINEL DE PRODUTIVIDADE</p>
+            <h1>Seu trabalho, em fluxo.</h1>
+            <p class="muted">
+                Gerencie atividades, acompanhe prioridades e mantenha sua equipe alinhada.
+            </p>
+        </div>
+
+        <div class="hero-chip">● Visão geral do projeto</div>
+    </section>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <section class="stats">
+        <article class="stat">
+            <span>Total de tarefas</span>
+            <strong>{{ counts.total }}</strong>
+        </article>
+
+        <article class="stat">
+            <span>A fazer</span>
+            <strong>{{ counts.todo }}</strong>
+        </article>
+
+        <article class="stat">
+            <span>Em progresso</span>
+            <strong>{{ counts.doing }}</strong>
+        </article>
+
+        <article class="stat">
+            <span>Concluídas</span>
+            <strong>{{ counts.done }}</strong>
+        </article>
+    </section>
+
+    <section class="panel">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">NOVA ATIVIDADE</p>
+                <h2>Adicionar tarefa</h2>
+            </div>
+        </div>
+
+        <form class="create-form"
+              action="{{ url_for('create_task') }}"
+              method="post">
+
+            <input
+                name="title"
+                placeholder="Ex.: Revisar planejamento de entregas"
+                maxlength="120"
+                required
+            >
+
+            <input
+                name="description"
+                placeholder="Descrição (opcional)"
+                maxlength="500"
+            >
+
+            <select name="priority">
+                <option>Baixa</option>
+                <option selected>Média</option>
+                <option>Alta</option>
+            </select>
+
+            <button class="primary" type="submit">
+                + Adicionar
+            </button>
+        </form>
+    </section>
+
+    <section class="tasks-section">
+
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">ACOMPANHAMENTO</p>
+                <h2>Minhas tarefas</h2>
+            </div>
+
+            <form class="filters" method="get" action="{{ url_for('index') }}">
+
+                <input
+                    name="q"
+                    value="{{ search }}"
+                    placeholder="Buscar tarefa..."
+                >
+
+                <select name="status">
+                    <option value="">Todos os status</option>
+
+                    {% for s in ['A Fazer', 'Em Progresso', 'Concluída'] %}
+                        <option
+                            value="{{ s }}"
+                            {% if selected_status == s %}selected{% endif %}
+                        >
+                            {{ s }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <button class="secondary">Filtrar</button>
+            </form>
+        </div>
+
+        {% if tasks %}
+
+            <div class="task-list">
+
+                {% for task in tasks %}
+
+                    <article class="task-card">
+
+                        <div class="task-main">
+
+                            <div class="task-title-row">
+                                <h3>{{ task.title }}</h3>
+                                <span class="priority {{ task.priority|lower }}">
+                                    {{ task.priority }}
+                                </span>
+                            </div>
+
+                            {% if task.description %}
+                                <p class="muted">{{ task.description }}</p>
+                            {% endif %}
+
+                            <span class="status">{{ task.status }}</span>
+
+                        </div>
+
+                        <details class="edit">
+
+                            <summary>Editar</summary>
+
+                            <form
+                                action="{{ url_for('update_task', task_id=task.id) }}"
+                                method="post"
+                                class="edit-form"
+                            >
+
+                                <input
+                                    name="title"
+                                    value="{{ task.title }}"
+                                    required
+                                    maxlength="120"
+                                >
+
+                                <input
+                                    name="description"
+                                    value="{{ task.description }}"
+                                    maxlength="500"
+                                >
+
+                                <select name="priority">
+                                    {% for p in ['Baixa', 'Média', 'Alta'] %}
+                                        <option {% if task.priority == p %}selected{% endif %}>
+                                            {{ p }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+
+                                <select name="status">
+                                    {% for s in ['A Fazer', 'Em Progresso', 'Concluída'] %}
+                                        <option {% if task.status == s %}selected{% endif %}>
+                                            {{ s }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+
+                                <button class="secondary">
+                                    Salvar alterações
+                                </button>
+
+                            </form>
+                        </details>
+
+                        <form
+                            action="{{ url_for('delete_task', task_id=task.id) }}"
+                            method="post"
+                            onsubmit="return confirm('Excluir esta tarefa?')"
+                        >
+                            <button class="delete" aria-label="Excluir tarefa">
+                                Excluir
+                            </button>
+                        </form>
+
+                    </article>
+
+                {% endfor %}
+
+            </div>
+
+        {% else %}
+
+            <div class="empty">
+                <strong>Nenhuma tarefa encontrada.</strong>
+                <p>Adicione uma tarefa ou altere os filtros.</p>
+            </div>
+
+        {% endif %}
+
+    </section>
+
+    <footer>
+        TaskFlow · Projeto acadêmico de Engenharia de Software · TechFlow Solutions (fictícia)
+    </footer>
+
+</main>
+
+</body>
+</html>
